@@ -148,16 +148,16 @@ workflows:
   default:
     jobs:
       - cloudFomation-lint
-      - cloudFormation-deploy:
-          stack-name: DatHT20-Capstone
-          requires:
-            - cloudFomation-lint
+      # - cloudFormation-deploy:
+      #     stack-name: DatHT20-Capstone
+      #     requires:
+      #       - cloudFomation-lint
       - frontend-lint
-      - build-frontend:
-          requires:
-            - frontend-lint
-      - deploy-frontend:
-          cluster-name: "EKSClusterCapstone"
-          requires:
-              - build-frontend
-              - cloudFormation-deploy
+      # - build-frontend:
+      #     requires:
+      #       - frontend-lint
+      # - deploy-frontend:
+      #     cluster-name: "EKSClusterCapstone"
+      #     requires:
+      #         - build-frontend
+      #         - cloudFormation-deploy
