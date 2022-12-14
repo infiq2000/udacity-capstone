@@ -56,8 +56,8 @@ jobs:
       - restore_cache:
           keys:
             - v1-{{ .Branch }}
-          #paths:
-          #  - /caches/capstone-frontend.tar
+          paths:
+           - /caches/capstone-frontend.tar
       - run:
           name: Load Docker image layer cache
           command: |
@@ -82,6 +82,7 @@ jobs:
       - run:
           name: Publish Docker Image to Docker Hub
           command: |
+            docker tag capstone-frontend dathtfpt20/capstone-frontend:latest
             echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASS"
             docker push dathtfpt20/capstone-frontend:latest
 
