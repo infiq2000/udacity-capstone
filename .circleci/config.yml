@@ -18,6 +18,17 @@ jobs:
           name: Validate CloudFormation template
           command: |
             cfn-lint infrastructure/capstone-infra.yml
+  lint-frontend:
+    docker:
+      - image: node:13.8.0
+    steps:
+      - checkout
+      - run:
+          name: Check lint code
+          command: |
+            cd frontend
+            npm install
+            npm run lint
   deploy-cfn:
     parameters:
       stack-name:
