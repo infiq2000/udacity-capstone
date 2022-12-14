@@ -1,0 +1,10 @@
+{
+    "Parameters": {
+      "EnvironmentName": "UdacityCapstoneProject",
+      "PublicSubnet1CIDR": "10.0.0.0/24",
+      "PublicSubnet2CIDR": "10.0.1.0/24",
+      "EKSIAMRoleName": "EKSRoleCapstone",
+      "EKSClusterName": "EKSClusterCapstone",
+      "EKSNodeRoleName": "EKSNodeRoleCapstone"
+    }
+}

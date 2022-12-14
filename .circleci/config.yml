@@ -22,8 +22,30 @@ jobs:
           name: Validate CloudFormation template
           command: |
             cfn-lint infrastructure/capstone-infra.yml
+  deploy-cfn:
+    parameters:
+      stack-name:
+        description: Name of the CloudFormation stack
+        type: string
+    executor: aws-cli/default
+    steps:
+      - checkout
+      - aws-cli/setup
+      - run:
+          name: Deploy Cloudformation Template with new Docker image
+          no_output_timeout: 30m
+          command: |
+            aws cloudformation deploy \
+            --template-file infrastructure/capstone-infra.yml \
+            --parameter-overrides $(jq -r '.[] | [.ParameterKey, .ParameterValue] | "\(.[0])=\(.[1])"' ./infrastructure/capstone-infra-parameters.json) \
+            --stack-name << parameters.stack-name >> \
+            --capabilities "CAPABILITY_IAM" "CAPABILITY_NAMED_IAM"
 workflows:
   default: # This is the name of the workflow, feel free to change it to better match your workflow.
     # Inside the workflow, you define the jobs you want to run.
     jobs:
       - cfn-lint
+      - deploy-cfn:
+          stack-name: Udacity-Capstone
+          requires:
+            - cfn-lint
