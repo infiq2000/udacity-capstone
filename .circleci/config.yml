@@ -5,7 +5,7 @@ orbs:
   kubernetes: circleci/kubernetes@0.4.0
   aws-cli: circleci/aws-cli@1.4.0
 jobs:
-  cfn-lint:
+  cloudFomation-lint:
     docker:
       - image: cimg/python:3.9
     steps:
@@ -18,7 +18,7 @@ jobs:
           name: Validate CloudFormation template
           command: |
             cfn-lint infrastructure/capstone-infra.yml
-  lint-frontend:
+  frontend-lint:
     docker:
       - image: node:13.8.0
     steps:
@@ -29,7 +29,7 @@ jobs:
             cd frontend
             npm install
             npm run lint
-  deploy-cfn:
+  cloudFormation-deploy:
     parameters:
       stack-name:
         description: Name of the CloudFormation stack
@@ -147,17 +147,17 @@ jobs:
 workflows:
   default:
     jobs:
-      - cfn-lint
-      - deploy-cfn:
-          stack-name: Udacity-Capstone
+      - cloudFomation-lint
+      - cloudFormation-deploy:
+          stack-name: DatHT20-Capstone
           requires:
-            - cfn-lint
-      - lint-frontend
+            - cloudFomation-lint
+      - frontend-lint
       - build-frontend:
           requires:
-            - lint-frontend
+            - frontend-lint
       - deploy-frontend:
           cluster-name: "EKSClusterCapstone"
           requires:
               - build-frontend
-              - deploy-cfn
+              - cloudFormation-deploy
