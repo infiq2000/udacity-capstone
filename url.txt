@@ -1,0 +1,2 @@
+github: https://github.com/infiq2000/udacity-capstone.git
+domian: http://afc1973ed4acf4f2994303831089fd84-1319096181.us-east-1.elb.amazonaws.com/#/employees
