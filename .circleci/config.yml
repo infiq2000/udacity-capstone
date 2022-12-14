@@ -69,12 +69,12 @@ jobs:
           name: Build front-end
           command: |
             cd frontend
-            docker build -t dathtfpt20/capstone-frontend .
+            docker build -t datht20fpt/capstone-frontend .
       - run:
           name: Save Docker image layer cache
           command: |
             mkdir -p /caches
-            docker save -o /caches/capstone-frontend.tar dathtfpt20/capstone-frontend
+            docker save -o /caches/capstone-frontend.tar datht20fpt/capstone-frontend
       - save_cache:
           key: v1-{{ .Branch }}-{{ epoch }}
           paths:
@@ -82,10 +82,8 @@ jobs:
       - run:
           name: Publish Docker Image to Docker Hub
           command: |
-            echo "$DOCKERHUB_USERNAME"
-            echo "$DOCKERHUB_PASS"
-            docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASS" hub.docker.com
-            docker push dathtfpt20/capstone-frontend:latest
+            docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASS"
+            docker push datht20fpt/capstone-frontend:latest
 
   deploy-frontend:
     executor: aws-eks/python3
