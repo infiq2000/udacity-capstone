@@ -82,7 +82,6 @@ jobs:
       - run:
           name: Publish Docker Image to Docker Hub
           command: |
-            docker tag capstone-frontend dathtfpt20/capstone-frontend:latest
             echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASS"
             docker push dathtfpt20/capstone-frontend:latest
 
@@ -149,16 +148,16 @@ workflows:
   default:
     jobs:
       - cfn-lint
-      - deploy-cfn:
-          stack-name: Udacity-Capstone
-          requires:
-            - cfn-lint
+      # - deploy-cfn:
+      #     stack-name: Udacity-Capstone
+      #     requires:
+      #       - cfn-lint
       - lint-frontend
       - build-frontend:
           requires:
             - lint-frontend
-      - deploy-frontend:
-          cluster-name: "EKSClusterCapstone"
-          requires:
-              - build-frontend
-              - deploy-cfn
+      # - deploy-frontend:
+      #     cluster-name: "EKSClusterCapstone"
+      #     requires:
+      #         - build-frontend
+      #         - deploy-cfn
