@@ -82,7 +82,9 @@ jobs:
       - run:
           name: Publish Docker Image to Docker Hub
           command: |
-            echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASS"
+            echo "$DOCKERHUB_USERNAME"
+            echo "$DOCKERHUB_PASS"
+            docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASS" hub.docker.com
             docker push dathtfpt20/capstone-frontend:latest
 
   deploy-frontend:
