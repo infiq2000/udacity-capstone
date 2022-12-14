@@ -1,2 +1,2 @@
-# udacity-capstone
-# DatHT20
+# udacity-capstone project
+# HUYNH TAN DAT (datht)
