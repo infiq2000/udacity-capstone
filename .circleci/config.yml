@@ -1,8 +1,4 @@
-# This config is equivalent to both the '.circleci/extended/orb-free.yml' and the base '.circleci/config.yml'
 version: 2.1
-
-# Orbs are reusable packages of CircleCI configuration that you may share across projects, enabling you to create encapsulated, parameterized commands, jobs, and executors that can be used across multiple projects.
-# See: https://circleci.com/docs/2.0/orb-intro/
 orbs:
   node: circleci/node@4.7
   aws-eks: circleci/aws-eks@1.1.0
@@ -40,12 +36,117 @@ jobs:
             --parameter-overrides $(jq -r '.[] | [.ParameterKey, .ParameterValue] | "\(.[0])=\(.[1])"' ./infrastructure/capstone-infra-parameters.json) \
             --stack-name << parameters.stack-name >> \
             --capabilities "CAPABILITY_IAM" "CAPABILITY_NAMED_IAM"
+  build-frontend:
+    docker:
+      - image: docker:17.05.0-ce-git
+    steps:
+      - checkout
+      - setup_remote_docker
+      - restore_cache:
+          keys:
+            - v1-{{ .Branch }}
+          #paths:
+          #  - /caches/capstone-frontend.tar
+      - run:
+          name: Load Docker image layer cache
+          command: |
+            # set +o pipefail
+            if [[ -f "/caches/app.tar" ]]; then
+              docker load -i /caches/app.tar | true
+            fi
+      - run:
+          name: Build front-end
+          command: |
+            cd frontend
+            docker build -t dathtfpt20/capstone-frontend .
+      - run:
+          name: Save Docker image layer cache
+          command: |
+            mkdir -p /caches
+            docker save -o /caches/capstone-frontend.tar duyhuynhdn/capstone-frontend
+      - save_cache:
+          key: v1-{{ .Branch }}-{{ epoch }}
+          paths:
+            - /caches/capstone-frontend.tar
+      - run:
+          name: Publish Docker Image to Docker Hub
+          command: |
+            echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASS"
+            docker push dathtfpt20/capstone-frontend:latest
+
+  deploy-frontend:
+    executor: aws-eks/python3
+    parameters:
+      cluster-name:
+        description: |
+          Name of the EKS cluster
+        type: string
+    steps:
+      - checkout
+      - aws-eks/update-kubeconfig-with-authenticator:
+          cluster-name: << parameters.cluster-name >>
+          install-kubectl: true
+      -  run:
+          name: Install envsubst
+          command: |
+            curl -L https://github.com/a8m/envsubst/releases/download/v1.2.0/envsubst-`uname -s`-`uname -m` -o envsubst
+            chmod +x envsubst
+            sudo mv envsubst /usr/local/bin
+      -  run:
+          name: Restart image
+          command: |
+            kubectl get service > service.txt
+            if grep -q 'capstone-frontend' service.txt; then
+              kubectl describe service capstone-frontend > capstone.txt
+              if grep -q "role=green" capstone.txt; then
+                echo 'export COLOR=blue' >> "$BASH_ENV"
+              else
+                echo 'export COLOR=green' >> "$BASH_ENV"
+              fi
+            else
+              echo 'export COLOR=blue' >> "$BASH_ENV"
+            fi
+            source "$BASH_ENV"
+      - run:
+          name: Replace variable
+          command: |
+            envsubst < kubernates/capstone-frontend-deployment.yml > kubernates/capstone-frontend-deployment.yml.temp && cp -f kubernates/capstone-frontend-deployment.yml.temp kubernates/capstone-frontend-deployment.yml
+            envsubst < kubernates/capstone-frontend-service.yml > kubernates/capstone-frontend-service.yml.temp && cp -f kubernates/capstone-frontend-service.yml.temp kubernates/capstone-frontend-service.yml
+            echo "##################################"
+            cat kubernates/capstone-frontend-deployment.yml
+            echo "##################################"
+            cat kubernates/capstone-frontend-service.yml
+      - kubernetes/create-or-update-resource:
+          get-rollout-status: true
+          resource-file-path: "kubernates/capstone-frontend-deployment.yml"
+          resource-name: deployment/capstone-frontend-$COLOR
+      - kubernetes/create-or-update-resource:
+          get-rollout-status: true
+          resource-file-path: "kubernates/capstone-frontend-service.yml"
+          resource-name: deployment/capstone-frontend-$COLOR
+      - kubernetes/update-container-image:
+          get-rollout-status: true
+          container-image-updates: "capstone-frontend=duyhuynhdn/capstone-frontend:latest"
+          resource-name: deployment/capstone-frontend-$COLOR
+      - run:
+          name: Restart image
+          command: |
+            kubectl rollout restart deployment/capstone-frontend-$COLOR
+  
 workflows:
-  default: # This is the name of the workflow, feel free to change it to better match your workflow.
-    # Inside the workflow, you define the jobs you want to run.
+  default:
     jobs:
       - cfn-lint
       - deploy-cfn:
           stack-name: Udacity-Capstone
           requires:
             - cfn-lint
+      - lint-frontend
+      - build-frontend:
+          requires:
+            - lint-frontend
+      - deploy-frontend:
+          cluster-name: "EKSClusterCapstone"
+          requires:
+              - build-frontend
+              - deploy-cfn
