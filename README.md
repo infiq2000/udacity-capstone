@@ -1,4 +1,2 @@
 # udacity-capstone
-# set up
-# add
-# test
+# DatHT20
